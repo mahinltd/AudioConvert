@@ -1,0 +1,5 @@
+{
+  "name": "Audio Converter to FLAC",
+  "description": "A simple and clean tool to convert MP3 and MP4 files to high-quality FLAC format.",
+  "requestFramePermissions": []
+}
