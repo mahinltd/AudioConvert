@@ -12,13 +12,6 @@ async function startServer() {
 
   console.log("Starting server in", process.env.NODE_ENV || "development", "mode");
 
-  // Required for FFmpeg.wasm SharedArrayBuffer support
-  app.use((_req, res, next) => {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-    next();
-  });
-
   // All conversion is done client-side via FFmpeg.wasm — no server-side file handling needed.
 
   // Vite middleware for development

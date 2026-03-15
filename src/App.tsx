@@ -72,8 +72,9 @@ const AD_UNLOCK_WATCH_SECONDS = 30;
 const AD_UNLOCK_MS = 15 * 60 * 1000;
 
 // Fill these with your real ad script URLs and zone/embed snippets.
-const ADSTERRA_SCRIPT_SRC = '';
-const POPADS_SCRIPT_SRC = '';
+const ADSTERRA_SCRIPT_SRC = 'https://pl28924863.effectivegatecpm.com/d1/ee/1e/d1ee1e9958ae4b01aa34bc99c493d945.js';
+const ADSTERRA_BANNER_728_KEY = 'bf7f39805200f7da2379190571359d26';
+const ADSTERRA_BANNER_728_SRC = 'https://www.highperformanceformat.com/bf7f39805200f7da2379190571359d26/invoke.js';
 
 const ffmpegRef = new FFmpeg();
 
@@ -148,20 +149,6 @@ export default function App() {
       s.src = ADSTERRA_SCRIPT_SRC;
       s.async = true;
       s.setAttribute('data-ad-network', 'adsterra');
-      document.body.appendChild(s);
-      return () => {
-        if (s.parentNode) s.parentNode.removeChild(s);
-      };
-    }
-    return;
-  }, []);
-
-  useEffect(() => {
-    if (POPADS_SCRIPT_SRC) {
-      const s = document.createElement('script');
-      s.src = POPADS_SCRIPT_SRC;
-      s.async = true;
-      s.setAttribute('data-ad-network', 'popads');
       document.body.appendChild(s);
       return () => {
         if (s.parentNode) s.parentNode.removeChild(s);
@@ -564,9 +551,7 @@ export default function App() {
               </div>
 
               <div className="mt-10 space-y-6">
-                <AdBanner title="Top Banner Ad" provider="Adsterra" />
-                <AdSlider />
-                <AdInlineBlock title="Mid Content Ad" provider="PopAds" />
+                <AdBanner title="Top Banner Ad" provider="Adsterra" unit="banner-728" />
               </div>
             </motion.div>
           ) : activePage === 'convert' ? (
@@ -673,8 +658,7 @@ export default function App() {
               </AnimatePresence>
 
               <div className="mt-10 space-y-6">
-                <AdInlineBlock title="In-Queue Ad Placement" provider="Adsterra" />
-                <AdBanner title="Bottom Banner Ad" provider="PopAds" />
+                <AdBanner title="Bottom Banner Ad" provider="Adsterra" unit="banner-728" />
               </div>
             </motion.div>
           ) : activePage === 'features' ? (
@@ -807,8 +791,7 @@ export default function App() {
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <AdInlineBlock title="Rewarded Ad Area" provider="Adsterra" />
-                <AdInlineBlock title="Rewarded Ad Area" provider="PopAds" />
+                <AdBanner title="Unlock Reward Ad" provider="Adsterra" unit="banner-728" />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-white/60">Time left: {watchSecondsLeft}s</span>
@@ -1104,7 +1087,16 @@ function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: stri
   );
 }
 
-function AdBanner({ title, provider }: { title: string; provider: 'Adsterra' | 'PopAds' }) {
+function AdBanner({ title, provider, unit }: { title: string; provider: 'Adsterra'; unit?: 'banner-728' }) {
+  if (provider === 'Adsterra' && unit === 'banner-728') {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <p className="text-xs uppercase tracking-widest text-white/40 mb-2">{provider} Banner 728x90</p>
+        <AdsterraIframeUnit adKey={ADSTERRA_BANNER_728_KEY} scriptSrc={ADSTERRA_BANNER_728_SRC} width={728} height={90} />
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
       <p className="text-xs uppercase tracking-widest text-white/40 mb-2">{provider} Banner</p>
@@ -1115,38 +1107,45 @@ function AdBanner({ title, provider }: { title: string; provider: 'Adsterra' | '
   );
 }
 
-function AdInlineBlock({ title, provider }: { title: string; provider: 'Adsterra' | 'PopAds' }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <p className="text-xs uppercase tracking-widest text-white/40 mb-2">{provider} Inline Ad</p>
-      <div className="h-36 rounded-xl bg-black/30 border border-white/10 flex items-center justify-center text-white/50 text-sm text-center px-4">
-        {title} - place {provider} script/div zone code in this slot
-      </div>
-    </div>
-  );
-}
-
-function AdSlider() {
-  const slides = [
-    'Sponsored: Audio tools and plugins',
-    'Sponsored: Learn sound design online',
-    'Sponsored: Creative software deals',
-  ];
-  const [index, setIndex] = useState(0);
+function AdsterraIframeUnit({
+  adKey,
+  scriptSrc,
+  width,
+  height,
+}: {
+  adKey: string;
+  scriptSrc: string;
+  width: number;
+  height: number;
+}) {
+  const slotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const t = window.setInterval(() => {
-      setIndex((prev) => (prev + 1) % slides.length);
-    }, 3000);
-    return () => window.clearInterval(t);
-  }, [slides.length]);
+    const slot = slotRef.current;
+    if (!slot) return;
+
+    slot.innerHTML = '';
+
+    const configScript = document.createElement('script');
+    configScript.type = 'text/javascript';
+    configScript.text = `atOptions = { key: '${adKey}', format: 'iframe', height: ${height}, width: ${width}, params: {} };`;
+
+    const invokeScript = document.createElement('script');
+    invokeScript.type = 'text/javascript';
+    invokeScript.src = scriptSrc;
+    invokeScript.async = true;
+
+    slot.appendChild(configScript);
+    slot.appendChild(invokeScript);
+
+    return () => {
+      slot.innerHTML = '';
+    };
+  }, [adKey, scriptSrc, width, height]);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <p className="text-xs uppercase tracking-widest text-white/40 mb-2">Sponsored Slider</p>
-      <div className="h-24 rounded-xl bg-black/30 border border-white/10 flex items-center justify-center text-white/60 text-sm px-4 text-center">
-        {slides[index]}
-      </div>
+    <div className="w-full overflow-x-auto">
+      <div ref={slotRef} className="min-w-[728px] min-h-[90px] rounded-xl bg-black/20 border border-white/10" />
     </div>
   );
 }
